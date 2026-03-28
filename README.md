@@ -1,212 +1,152 @@
-## AI Developer Agents
+# dev-agents
 
-AI Developer Agents is a framework for orchestrating a **team of specialized AI software developers** that collaborate like a real engineering organization.  
-Given a **Product Requirements Document (PRD)** or even a rough idea, the system coordinates multiple expert agents to design, implement, test, and deliver complete software projects.
+A system of AI developer agents for Claude Code. Specialized personas, slash commands, reusable skills, and safety hooks for the full software development lifecycle.
 
-The framework is intentionally **domain‑agnostic**: the same workflow can be applied to build:
+## Quickstart
 
-- Web applications
-- Backend services and APIs
-- Mobile applications
-- AI/ML systems and data pipelines
-- CLI tools
-- Automation and integration scripts
+```bash
+# Clone and enter the repo
+git clone <repo-url> && cd AgenticDevelopment
 
-The repository is designed to run inside AI‑native IDEs and agent platforms, but the concepts are general and can be adapted to any orchestration runtime.
+# Open Claude Code in this directory
+claude
 
----
+# Start with a PRD
+/create-prd
 
-## Core Concepts
-
-- **Orchestrator Agent (`AGENT.md`)**  
-  A senior “tech lead” AI that owns the end‑to‑end delivery. It reads the PRD, decomposes the work, assigns tasks to specialist agents, tracks progress, and ensures architectural and quality consistency.
-
-- **Product Requirements Document (PRD)**  
-  A structured description of the target system (see `PRD.md`) that drives all downstream work. PRDs can be generated from a user idea using the process in `Create-PRD.md`.
-
-- **Specialized Developer Agents (`Agents/`)**  
-  Role‑based agents that mirror a modern software team:
-  - `architect-agent` – system design and technical architecture
-  - `backend-agent` – services, APIs, persistence
-  - `frontend-agent` – UI and client applications
-  - `ai-engineer-agent` – ML models, data, and AI systems
-  - `devops-agent` – deployment, infra, CI/CD
-  - `qa-agent` – testing and quality assurance
-
-- **Commands (`Commands/`)**  
-  A small, composable command set each agent can execute:
-  - `design-architecture` – high‑level and detailed design
-  - `create-file` – materialize files and directory structure
-  - `generate-code` – implement features and logic
-  - `refactor` – improve, restructure, and pay down technical debt
-  - `run-tests` – execute and interpret automated tests
-
-- **Skills (`SKILL.md`)**  
-  A shared description of what the overall agent team is capable of: architecture, backend, frontend, AI/ML, testing, deployment, and documentation.
+# Or invoke a specialist agent
+claude --system-prompt .claude/agents/architect.md
+```
 
 ---
 
-## High‑Level Workflow
+## Agents
 
-1. **Collect input**  
-   - User provides an **idea** or a **PRD**.  
-   - If only an idea is provided, the orchestrator invokes the **Create‑PRD** flow to convert it into a structured PRD (see `Create-PRD.md`).
+Each agent is a system prompt that makes Claude adopt a specific engineering role.
 
-2. **Understand and scope**  
-   - Orchestrator reads the PRD (`AGENT.md`) and validates:
-     - Target platform(s) (web, backend, mobile, AI system, CLI, etc.)
-     - Functional and non‑functional requirements
-     - Constraints and priorities
+```bash
+claude --system-prompt .claude/agents/<name>.md
+```
 
-3. **Architecture & planning**  
-   - Orchestrator delegates to `architect-agent` using:
-     - `design-architecture` to propose overall system design
-     - Optional `refactor` passes on the architecture as requirements evolve
-   - Architecture output includes:
-     - System context and component diagrams (conceptually)
-     - Service boundaries, data model and APIs
-     - Technology choices (stack, frameworks, infra)
-     - Milestones and work breakdown
+| Agent | Role | Best for |
+|---|---|---|
+| **architect** | Senior software architect | System design, technology selection, ADRs, Mermaid diagrams |
+| **developer** | Full-stack developer | Feature implementation, production-ready code, disciplined workflow |
+| **reviewer** | Staff engineer | Code review with 🔴/🟡/🟢 severity labels and concrete fix examples |
+| **tester** | QA automation engineer | Test strategy, coverage analysis, edge case discovery |
+| **debugger** | Root cause detective | Hypothesis-driven debugging, regression tests, `git bisect` |
 
-4. **Task decomposition & assignment**  
-   - Orchestrator splits the work into concrete tasks and milestones:
-     - Backend endpoints, database schemas, queues
-     - Frontend views, components, and flows
-     - AI/ML pipelines, models, and evaluation
-     - DevOps pipelines, infra definitions, deployment targets
-     - QA strategies, test suites, and validation flows
-   - Each task is assigned to the **most appropriate agent** via commands (create/generate/refactor/test).
+**Example use cases:**
 
-5. **Implementation loop**  
-   - Each specialized agent:
-     - Uses `create-file` to scaffold structure.
-     - Uses `generate-code` to implement features.
-     - Requests or uses `design-architecture` when cross‑cutting design decisions are needed.
-     - Uses `refactor` to keep code healthy as requirements change.
-   - The orchestrator:
-     - Coordinates dependencies between agents.
-     - Ensures consistency with the PRD and architecture.
-     - Requests cross‑agent reviews when needed (e.g., backend ↔ frontend API contracts).
+```bash
+# Design a new feature before implementing it
+claude --system-prompt .claude/agents/architect.md
+> "We need to add real-time notifications to our SaaS app. Current stack: Node + PostgreSQL + 3k concurrent users."
 
-6. **Testing and validation**  
-   - `qa-agent` designs and implements tests:
-     - Unit, integration, end‑to‑end, and performance tests where applicable.
-   - `run-tests` is invoked iteratively:
-     - On each significant milestone.
-     - After refactorings or architecture changes.
-   - Failures are routed back to the responsible agent for fixes.
+# Review a PR before merging
+claude --system-prompt .claude/agents/reviewer.md
+> "Review the diff in feature/payment-refunds"
 
-7. **Deployment & delivery**  
-   - `devops-agent` prepares:
-     - Infrastructure definitions (e.g., IaC).
-     - CI/CD pipelines.
-     - Deployment strategies (e.g., rolling, blue/green).
-   - Orchestrator validates that:
-     - The deployment approach matches non‑functional requirements.
-     - Documentation is complete and consistent with final behavior.
-
-8. **Documentation & hand‑off**  
-   - All agents contribute to documentation:
-     - Architecture and decisions.
-     - API contracts, data models, and operations.
-     - How to run, test, and extend the system.
-   - Output is suitable for a human team to continue development or operations.
+# Track down a production bug
+claude --system-prompt .claude/agents/debugger.md
+> "Orders created before 2024-01-01 return 500. Started after deploy v2.3.1."
+```
 
 ---
 
-## Supported Project Types
+## Commands
 
-The framework is intentionally flexible. Examples of projects it can handle include:
+Slash commands available in any Claude Code session in this project.
 
-- **Web applications**
-  - Full‑stack apps with SPA/MPA frontends and REST/GraphQL backends.
-  - Authentication, role‑based access control, and dashboards.
-
-- **Backend services**
-  - Microservices or monoliths.
-  - Event‑driven systems, background workers, or cron‑based jobs.
-  - API gateways and service meshes (at design level).
-
-- **Mobile applications**
-  - Native or cross‑platform frontends.
-  - Offline‑first patterns and synchronization with backend services.
-
-- **AI/ML systems**
-  - Training pipelines, model serving, and monitoring.
-  - Data ingestion, feature engineering, and evaluation loops.
-
-- **CLI tools**
-  - Developer productivity tools.
-  - Data processing utilities.
-
-- **Automation scripts**
-  - Integrations across SaaS platforms.
-  - Workflow and operations automation.
-
-The orchestrator’s decomposition logic is written to remain generic: any new application type can be accommodated by updating PRD patterns, architecture templates, and agent skill prompts.
+| Command | Usage | Description |
+|---|---|---|
+| `/create-prd` | `/create-prd [filename]` | Full PRD with user stories, architecture, API spec, phases |
+| `/implement` | `/implement "add user export to CSV"` | Decompose → implement → test → commit |
+| `/review` | `/review src/payments/` | Code review with severity labels and fix examples |
+| `/test` | `/test src/orders/service.ts` | Write tests, run them, fix failures, check coverage |
+| `/refactor` | `/refactor src/utils/formatter.ts` | Safe refactoring with test checkpoint after each change |
+| `/debug` | `/debug "checkout returns 500 for gift cards"` | Root cause analysis with regression test |
+| `/commit` | `/commit` | Safety checks → Conventional Commit → confirm → push |
+| `/ship` | `/ship` | review → test → env check → changelog → version bump → release notes |
 
 ---
 
-## Repository Structure
+## Skills
 
-At a glance:
+Skills are reference files with real code examples. Agents and commands read the relevant skill before starting work — they act as a shared style guide and checklist.
 
-- `README.md` – Overview and conceptual documentation (this file).
-- `AGENT.md` – The orchestrator / coordinator agent specification.
-- `PRD.md` – Example PRD demonstrating the format and level of detail.
-- `Create-PRD.md` – How to convert user ideas into structured PRDs.
-- `SKILL.md` – Shared capability definition for the agent team.
-- `Commands/` – Command specs each agent can execute.
-  - `create-file.md`
-  - `generate-code.md`
-  - `run-tests.md`
-  - `refactor.md`
-  - `design-architecture.md`
-- `Agents/` – Role‑based developer agent definitions.
-  - `architect-agent.md`
-  - `backend-agent.md`
-  - `frontend-agent.md`
-  - `ai-engineer-agent.md`
-  - `devops-agent.md`
-  - `qa-agent.md`
+```
+.claude/skills/
+├── coding/SKILL.md       Codebase navigation, function rules, error handling, pre-commit checklist
+├── git/SKILL.md          Conventional Commits, branch naming, atomic commits, git bisect
+├── testing/SKILL.md      Test pyramid, AAA pattern, mock rules, parametrized tests (Jest + pytest)
+├── review/SKILL.md       Priority order, OWASP checklist, performance red flags, feedback style
+└── architecture/SKILL.md Monolith vs microservices, ADR template, C4 model, API design, 12-factor
+```
+
+To use a skill directly:
+```bash
+claude
+> Read .claude/skills/architecture/SKILL.md and help me design the data model for a multi-tenant SaaS
+```
 
 ---
 
-## How to Use This Framework
+## Hooks
 
-1. **Integrate into an AI orchestration environment**  
-   - Map each markdown file to an agent or command definition in your platform of choice.
-   - Use the orchestrator (`AGENT.md`) as the entrypoint.
+Hooks run automatically based on events. Configured in `.claude/settings.json`.
 
-2. **From idea to PRD**
-   - Feed a high‑level idea into a “PRD creator” agent that follows `Create-PRD.md`.
-   - Review and optionally refine the generated PRD.
+### pre-tool.sh — Before every Bash command
+- **Blocks** (exit 2): `rm -rf /`, `rm -rf ~`, `DROP TABLE` without `WHERE`
+- **Warns** (exit 1): `git push --force` (suggests `--force-with-lease`), direct push to `main`/`master`
+- **Logs** all commands to `.claude/logs/tool-calls.jsonl`
 
-3. **From PRD to implementation**
-   - Provide the PRD to the orchestrator agent.
-   - Allow the orchestrator to spin up role agents as needed and execute the defined commands.
+### post-tool.sh — After every Write/Edit/MultiEdit
+- **Auto-formats**: `.ts/.js/.json/.css` → prettier | `.py` → black | `.go` → gofmt
+- **Reminds** to run tests when a `*.test.*` or `*.spec.*` file is modified
+- **Logs** all modified files to `.claude/logs/tool-results.jsonl`
 
-4. **Inspect and iterate**
-   - Inspect generated architecture, code, and tests.
-   - Adjust PRD or constraints and re‑run orchestration as necessary.
+### stop.sh — When the agent session ends
+- Reports any uncommitted changes with a reminder to `/commit`
+- Prints a summary: "✅ Session complete. X files modified."
 
 ---
 
-## Extending the Framework
+## Recommended Workflow
 
-You can extend AI Developer Agents by:
+```
+/create-prd
+    ↓
+architect agent  →  design + ADRs
+    ↓
+/implement [feature]  →  code + tests + commit
+    ↓
+/review  →  catch issues (fix 🔴 blockers)
+    ↓
+/test [module]  →  coverage ≥ 80%
+    ↓
+/ship  →  version bump + release notes
+```
 
-- **Adding new agent roles**  
-  E.g., `security-engineer-agent`, `data-engineer-agent`, `product-manager-agent`.
+---
 
-- **Adding new commands**  
-  E.g., `run-benchmark`, `generate-diagram`, `migrate-database`.
+## Project Structure
 
-- **Customizing skills**  
-  Narrow or expand the skills in `SKILL.md` to match your organization’s standards.
-
-- **Encoding organization‑specific practices**  
-  Integrate coding standards, architecture decision records (ADRs), and review checklists directly into the agent and command specs.
-
-This repository is meant to be a **starting point** for building robust, repeatable multi‑agent software delivery pipelines.
-
+```
+.claude/
+├── settings.json          Hook configuration
+├── commands/              Slash commands (/create-prd, /commit, /ship, ...)
+├── agents/                Sub-agent system prompts (architect, developer, ...)
+├── skills/                Reference skill files read by agents
+│   ├── coding/SKILL.md
+│   ├── git/SKILL.md
+│   ├── testing/SKILL.md
+│   ├── review/SKILL.md
+│   └── architecture/SKILL.md
+└── hooks/                 Bash scripts for PreToolUse / PostToolUse / Stop
+    ├── pre-tool.sh
+    ├── post-tool.sh
+    └── stop.sh
+CLAUDE.md                  Agent rules and workflow reference
+README.md                  This file
+```
